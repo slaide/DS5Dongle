@@ -72,8 +72,11 @@ void audio_loop() {
     int nframes = resampler.ResamplePrepare(frames, OUTPUT_CHANNELS, &in_buf);
 
     for (int i = 0; i < nframes; i++) {
-        audio_buf[audio_buf_pos++] = raw[i * INPUT_CHANNELS] / 32768.0f * (volume[0] - 1.0f);
-        audio_buf[audio_buf_pos++] = raw[i * INPUT_CHANNELS + 1] / 32768.0f * (volume[0] - 1.0f);
+        // Speaker UAC volume is ignored: the device exposes only a 1-2 dB range
+        // and ALSA tends to anchor new attaches at the bottom, silencing playback.
+        // Attenuation is delegated to PipeWire soft volume on the sink.
+        audio_buf[audio_buf_pos++] = raw[i * INPUT_CHANNELS] / 32768.0f;
+        audio_buf[audio_buf_pos++] = raw[i * INPUT_CHANNELS + 1] / 32768.0f;
         if (audio_buf_pos == 512 * 2) {
             static audio_raw_element element{};
             memcpy(element.data,audio_buf,512 * 2 * 4);
